@@ -312,9 +312,9 @@ test('oidc: ID token - at_hash validation ensures token binding', () => {
 		let res3 = oidc.verify_id_token(io, { id_token: h.generate_id_token(p1, PRIVKEY, "RS256"), access_token: "wrong" }, keys, f.MOCK_CONFIG, { nonce: "n" }, f.MOCK_DISCOVERY, io.time(), TEST_POLICY);
 		assert(!res3.ok && res3.error == "AT_HASH_MISMATCH");
 
-		// 4. Failure: at_hash missing when access_token present
+		// 4. Success: at_hash absent with access_token present (OIDC Core §3.1.3.8: optional in authorization code flow)
 		let res4 = oidc.verify_id_token(io, { id_token: h.generate_id_token(p2, PRIVKEY, "RS256"), access_token: access_token }, keys, f.MOCK_CONFIG, { nonce: "n" }, f.MOCK_DISCOVERY, io.time(), TEST_POLICY);
-		assert(!res4.ok && res4.error == "MISSING_AT_HASH");
+		assert(res4.ok, "Should accept absent at_hash in authorization code flow");
 
 		// 5. Failure: at_hash present but access_token missing (Stripping Attack)
 		let res5 = oidc.verify_id_token(io, { id_token: h.generate_id_token(p1, PRIVKEY, "RS256") }, keys, f.MOCK_CONFIG, { nonce: "n" }, f.MOCK_DISCOVERY, io.time(), TEST_POLICY);

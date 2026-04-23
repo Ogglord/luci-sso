@@ -147,7 +147,7 @@ test('oidc: security - reject missing mandatory claims', () => {
 	});
 });
 
-test('oidc: security - reject missing mandatory at_hash claim (W2)', () => {
+test('oidc: security - accept absent at_hash in authorization code flow (OIDC Core §3.1.3.8)', () => {
 	let keys = JWKS.keys;
 	let payload = { ...f.MOCK_CLAIMS, at_hash: null, nonce: "n1", sub: "u1" };
 	let tokens = { id_token: h.generate_id_token(payload, PRIVKEY, "RS256"), access_token: "at123" };
@@ -155,11 +155,10 @@ test('oidc: security - reject missing mandatory at_hash claim (W2)', () => {
 	let data = mock.create().spy((io) => {
 		let res = oidc.verify_id_token(io, tokens, keys, f.MOCK_CONFIG, { nonce: "n1" }, f.MOCK_DISCOVERY, 1500, TEST_POLICY);
         assert(Result.is(res));
-		assert(!res.ok, "Should reject ID token missing 'at_hash' claim");
-		assert_eq(res.error, "MISSING_AT_HASH");
+		assert(res.ok, "Should accept ID token with absent at_hash (optional in authorization code flow)");
 	});
 
-	assert(data.called("log", "error", "ID Token missing mandatory at_hash claim (Token Binding violation)"), "Should log security violation");
+	assert(data.called("log", "info", "ID Token omits at_hash (optional in authorization code flow per OIDC Core §3.1.3.8)"), "Should log info about absent at_hash");
 });
 
 test('oidc: security - reject UserInfo sub mismatch', () => {

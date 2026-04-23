@@ -239,23 +239,22 @@ export function verify_id_token(io, tokens, keys, config, handshake, discovery, 
 		return Result.err("AZP_MISMATCH", `Expected ${config.client_id}, got ${payload.azp}`);
 	}
 
-	// 3.3 Access Token Hash Check
+	// 3.3 Access Token Hash Check (OIDC Core §3.1.3.8: at_hash OPTIONAL in authorization code flow)
 	if (!tokens.access_token) {
 		return Result.err("MISSING_ACCESS_TOKEN");
 	}
-	if (!payload.at_hash) {
-		io.log("error", "ID Token missing mandatory at_hash claim (Token Binding violation)");
-		return Result.err("MISSING_AT_HASH");
-	}
+	if (payload.at_hash) {
+		let full_hash = crypto.sha256(tokens.access_token);
+		if (!full_hash) return Result.err("CRYPTO_ERROR");
 
-	let full_hash = crypto.sha256(tokens.access_token);
-	if (!full_hash) return Result.err("CRYPTO_ERROR");
+		let left_half = encoding.binary_truncate(full_hash, 16);
+		let expected_hash = crypto.b64url_encode(left_half);
 
-	let left_half = encoding.binary_truncate(full_hash, 16);
-	let expected_hash = crypto.b64url_encode(left_half);
-
-	if (!crypto.constant_time_eq(expected_hash, payload.at_hash)) {
-		return Result.err("AT_HASH_MISMATCH");
+		if (!crypto.constant_time_eq(expected_hash, payload.at_hash)) {
+			return Result.err("AT_HASH_MISMATCH");
+		}
+	} else {
+		io.log("info", "ID Token omits at_hash (optional in authorization code flow per OIDC Core §3.1.3.8)");
 	}
 
 	let user_data = {

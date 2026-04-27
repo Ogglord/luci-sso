@@ -147,7 +147,10 @@ export function get_session(io, sid) {
 	if (type(io.ubus_call) != "function") return Result.err("UBUS_UNAVAILABLE");
 	if (!sid || type(sid) != "string") return Result.err("INVALID_SID");
 
-	let res = io.ubus_call("session", "get", { ubus_rpc_session: sid });
+	let res = io.ubus_call("session", "get", {
+		ubus_rpc_session: sid,
+		keys: ["username", "oidc_user", "oidc_access_token", "oidc_refresh_token", "oidc_id_token", "token"]
+	});
 	if (!res || type(res.values) != "object") {
 		return Result.err("SESSION_NOT_FOUND");
 	}

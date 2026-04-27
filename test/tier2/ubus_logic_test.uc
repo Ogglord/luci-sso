@@ -7,6 +7,7 @@ test('ubus: logic - get_session success', () => {
 	let factory = mock.create().with_ubus({
 		"session:get": (args) => {
 			assert_eq(args.ubus_rpc_session, "sid-123");
+			assert(type(args.keys) == "array", "session get must pass explicit keys (firmware compat)");
 			return { values: { oidc_user: "test@example.com", oidc_id_token: "token-abc" } };
 		}
 	});
